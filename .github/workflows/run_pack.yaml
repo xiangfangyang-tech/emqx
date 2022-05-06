@@ -1,0 +1,41 @@
+name: JMeter integration tests
+
+on:
+  push:
+    tags:
+      - "v5.*"
+  pull_request:
+    branchs:
+      - "master"
+
+jobs:
+  build_emqx_for_jmeter_tests:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.build_docker.outputs.version}}
+    steps:
+    - name: download jmeter
+      timeout-minutes: 3
+      env:
+          JMETER_VERSION: 5.4.3
+      run: |
+        wget --no-verbose --no-check-certificate -O /tmp/apache-jmeter.tgz https://downloads.apache.org/jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
+    - uses: actions/upload-artifact@v2
+      with:
+        name: apache-jmeter.tgz
+        path: /tmp/apache-jmeter.tgz
+    - uses: actions/checkout@v2
+    - name: zip emqx docker image
+      id: build_docker
+      if: endsWith(github.repository, 'emqx')
+      run: |
+        ## TODO: make profile a matrix dimension
+        PROFILE='emqx'
+        make "${PROFILE}-docker"
+        VSN="$(./pkg-vsn.sh $PROFILE)"
+        echo "::set-output name=version::${VSN}"
+        docker save -o emqx.tar emqx/emqx:${VSN}
+    - uses: actions/upload-artifact@v2
+      with:
+        name: emqx.tar
+        path: ./emqx.tar
