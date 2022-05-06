@@ -2,8 +2,8 @@ name: JMeter integration tests
 
 on:
   push:
-    tags:
-      - "v5.*"
+#    tags:
+#      - "v5.*"
   pull_request:
     branchs:
       - "master"
